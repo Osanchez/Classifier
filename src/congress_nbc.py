@@ -157,17 +157,17 @@ class NaiveBayes:
             self.democrat[bill]['Other'] = 1 / (number_of_democratic_voters + 1)
 
         # Output all information gathered
-        # print("Republican Voters:", number_of_republican_voters)
-        # print("Democratic Voters:", number_of_democratic_voters)
-        # print()
-        # print(self.bill_votes)
-        # print()
-        # print("P(Republican):", self.republic_prob)
-        # print("P(Democratic):", self.democrat_prob)
-        # print()
+        print("Republican Voters:", number_of_republican_voters)
+        print("Democratic Voters:", number_of_democratic_voters)
+        print()
+        print(self.bill_votes)
+        print()
+        print("P(Republican):", self.republic_prob)
+        print("P(Democratic):", self.democrat_prob)
+        print()
         print("Republican:", self.republic)
         print("Democratic:", self.democrat)
-        # print()
+        print()
 
     """
     reads each line from the test data and outputs classification
@@ -206,10 +206,14 @@ def main():
     classifier = NaiveBayes()
     # classifier.train_model('../data/congress_train.csv')  # arg 0
     # classifier.test_model('../data/congress_test.csv')   # arg 1
+
+    # classifier.train_model(args[0])  # arg 0
+    # classifier.test_model(args[1])  # arg 1
+
     classifier.train_model('../data/my_train.csv')  # arg 0
     classifier.test_model('../data/my_test.csv')  # arg 1
 
-    classifier.model_results()
+    #classifier.model_results()
 
 
 if __name__ == '__main__':
