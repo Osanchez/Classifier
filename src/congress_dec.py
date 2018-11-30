@@ -1,133 +1,234 @@
 import math
-
-
-class Tree:
-    def __init__(self):
-        self.bill = None
-        self.left = None
-        self.right = None
-        self.result = ''
-
-    def decision_result(self):
-        return self.result
+import operator
+import random
+from collections import Counter
 
 
 class DecisionTree:
     def __init__(self):
         self.tree = None
+        self.data = []
+        self.test = []
+        self.attributes = [i for i in range(43)]
 
-        self.republican_voters = 0
-        self.democrat_voters = 0
+        self.train_expected = []
+        self.test_actual = []
 
-        self.votes = {}
-        self.combined_votes = {}
-
-        self.class_entropy = 0
-        self.entropy = {}
-        self.gain = {}
-
-    def train_model(self, train_model_directory):
-        # Keep the total number of yes and no votes for each bill (initialization)
-        for i in range(42):
-            self.combined_votes[i] = {'Yea': 0, 'Nay': 0}
-
-        # Keep the number of yes and no votes for each class for each bill (initialization)
-        for i in range(42):
-            self.votes[i] = {'Republican': {'Yea': 0, 'Nay': 0}, 'Democrat': {'Yea': 0, 'Nay': 0}}
-
+    def read_data(self, train_model_directory):
         # Begin reading training set
         with open(train_model_directory, 'r') as f:
             for line in f:
                 line = line.strip('\n').split(',')
-                classification = line[len(line) - 1]
-                votes = line[0:len(line) - 1]
+                self.train_expected.append(line[len(line) - 1])
+                self.data.append(line)
 
-                if classification == "Republican":
-                    self.republican_voters += 1
-                elif classification == "Democrat":
-                    self.democrat_voters += 1
+    def getExamples(self, data, best_attribute, val):
+        examples = [[]]
+        index = best_attribute
+        for entry in data:
+            if entry[index] == val:
+                new_entry = []
+                # add value if it is not in best column
+                for i in range(len(entry)):
+                    if i != index:
+                        new_entry.append(entry[i])
+                examples.append(new_entry)
+        examples.remove([])
+        return examples
 
-                for i in range(len(votes)):
-                    vote = votes[i]
-                    if vote != "Yea":
-                        vote = "Nay"
-                        self.combined_votes[i][vote] += 1
-                        self.votes[i][classification][vote] += 1
-                    else:
-                        self.combined_votes[i][vote] += 1
-                        self.votes[i][classification][vote] += 1
+    def getValues(self, examples, best_attribute):
+        values = []
 
-        # --------------- calculate entropy of attribute ---------------
-        print("# republicans:", self.republican_voters)
-        print("# democrats:", self.democrat_voters)
-        print("Votes", self.votes)
-        print("Combined Votes", self.combined_votes)
+        for example in examples:
+            if example[best_attribute] not in values:
+                values.append(example[best_attribute])
+        return values
 
-        for i in range(len(self.combined_votes)):
-            # calculate entropy of class
-            q = sum(self.votes.get(i).get("Republican").values()) / sum(self.combined_votes.get(i).values())  # P
-            self.class_entropy = (-q * math.log(q, 2)) - ((1 - q) * math.log((1 - q), 2))
+    def importance(self, examples, attributes):
+        gain = []
 
-            # 1. information gain
-            self.entropy[i] = 0
+        number_republicans = 0
+        number_democrats = 0
 
-            p_i = self.votes.get(i).get("Republican").get("Yea")  # yes votes from republicans for bill
-            n_i = self.votes.get(i).get("Democrat").get("Yea")  # yes votes from democrats for bill
-            q = p_i / (p_i + n_i)
+        # gets the number of republicans and democratic voters in examples
+        for example in examples:
+            classification = example[len(example) - 1]
+            if classification == "Republican":
+                number_republicans += 1
+            elif classification == "Democrat":
+                number_democrats += 1
 
-            if p_i == n_i:
-                information_gain_yea = 1
-            elif p_i == 0 or n_i == 0:
-                information_gain_yea = 0
-            else:
-                information_gain_yea = (-q * math.log(q, 2)) - ((1 - q) * math.log((1 - q), 2))
+        # print(number_republicans)
+        # print(number_democrats)
 
-            self.entropy[i] += (((p_i + n_i) / (self.republican_voters + self.democrat_voters))
-                                * information_gain_yea)
+        # calculate entropy of class attribute
+        P = number_republicans
+        N = number_democrats
+        entropy_class = ((-P) / (P + N)) * math.log((P / (P + N)), 2) - (N / (P + N)) * math.log((N / (P + N)), 2)
 
-            p_i = self.votes.get(i).get("Republican").get("Nay")  # nay votes from republicans for bill
-            n_i = self.votes.get(i).get("Democrat").get("Nay")  # nay votes from democrats for bill
-            q = p_i / (p_i + n_i)
+        # information gain
+        for attribute_index in attributes:
+            # yes vote
+            p_i = 0
+            n_i = 0
 
-            if p_i == n_i:
-                information_gain_nay = 1
-            elif p_i == 0 or n_i == 0:
-                information_gain_nay = 0
-            else:
-                information_gain_nay = (-q * math.log(q, 2)) - ((1 - q) * math.log((1 - q), 2))
+            # no vote
+            p_i_2 = 0
+            n_i_2 = 0
 
-            # 2. entropy
-            self.entropy[i] += (((p_i + n_i) / (self.republican_voters + self.democrat_voters))
-                                * information_gain_nay)  # information_gain_nay
+            for voter in examples:
 
-            # 3. gain
-            self.gain[i] = self.class_entropy - self.entropy[i]
+                classification = voter[len(voter) - 1]
+                vote = voter[attribute_index]
 
-        print("Entropy:", self.entropy)
-        print("Gain:", self.gain)
+                if vote == "Yea" and classification == "Republican":
+                    p_i += 1
+                elif vote == "Yea" and classification == "Democrat":
+                    n_i += 1
+                elif vote != "Yea" and classification == "Republican":
+                    p_i_2 += 1
+                elif vote != "Yea" and classification == "Democrat":
+                    n_i_2 += 1
 
-        print("Root:", max(self.gain.keys(), key=(lambda k: self.gain[k])))  # max gain
+        # entropy of attribute
+            entropy_attribute = (((p_i + n_i)/(P + N)) * self.information_gain(p_i, n_i)) + \
+                                (((p_i_2 + n_i_2)/(P + N)) * self.information_gain(p_i_2, n_i_2))
+            # print(entropy_attribute)
 
+        # gain
+            attribute_gain = entropy_class - entropy_attribute
+            gain.append(attribute_gain)
+
+        # print(max(enumerate(gain), key=operator.itemgetter(1))[0])  # return the attribute with greatest gain
+
+        return max(enumerate(gain), key=operator.itemgetter(1))[0]
+
+    def information_gain(self, p_i, n_i):
+        if p_i == n_i:
+            return 1
+        elif p_i == 0 or n_i == 0:
+            return 0
+        else:
+            return ((-p_i) / (p_i + n_i)) * math.log((p_i / (p_i + n_i)), 2)\
+                   - (n_i / (p_i + n_i)) * math.log((n_i / (p_i + n_i)), 2)
+
+    def plurality_value(self, examples):
+        tie_breaker = ["Republican", "Democrat"]
+        republicans = 0
+        democrats = 0
+
+        for example in examples:
+            classification = example[len(example) - 1]
+            if classification == "Republican":
+                republicans += 1
+            elif classification == "Democrat":
+                democrats += 1
+
+        if republicans > democrats:
+            return "Republican"
+        elif democrats > republicans:
+            return "Democrat"
+        else:
+            return random.choice(tie_breaker)
 
     def build_tree_classifier(self, examples, attributes, parent_examples):
-        if len(examples) == 0:
+        # print("examples", examples)
+        # print("attributes", attributes)
+        # print("parent example", parent_examples)
+        # print()
+
+        republicans = None
+        democrats = None
+
+        if len(examples[0]) > 1:
+            republicans = 0
+            democrats = 0
+            for i in range(len(examples)):
+                classification = examples[i][len(examples[i]) - 1]
+                if classification == "Republican":
+                    republicans += 1
+                elif classification == "Democrat":
+                    democrats += 1
+
+        if len(examples[0]) == 0:
             return self.plurality_value(parent_examples)
-        elif 1:
-            pass
+        elif republicans == 0:
+            return "Democrat"
+        elif democrats == 0:
+            return "Republican"
         elif len(attributes) == 0:
             return self.plurality_value(examples)
+        else:
+            # calculate the attribute with highest importance given a list of examples
+            A = self.importance(examples, attributes)
+            tree = {A: {}}
 
-    def plurality_value(self, parent_example):
-
-
+            # Create a new decision tree/sub-node for each of the values in the best attribute field
+            for val in self.getValues(examples, A):  # v_k
+                # Create a subtree for the current value under the "best" field
+                exs = self.getExamples(examples, A, val)
+                attributes_copy = [i for i in range(len(exs[0]))]
+                # print(len(exs[0]))
+                subtree = self.build_tree_classifier(exs, attributes_copy, examples)
+                # Add the new subtree to the empty dictionary object in our new
+                # tree/node we just created.
+                tree[A][val] = subtree
+            self.tree = tree
+            return tree
 
     def test_model(self, test_model_directory):
-        pass
+        # Begin reading training set
+        with open(test_model_directory, 'r') as f:
+            for line in f:
+                line = line.strip('\n').split(',')
+                self.test.append(line)
+
+        examples = self.test
+        tree = self.tree
+
+        for example in examples:
+            tree = self.tree
+            while tree != "Republican" and tree != "Democrat":
+                # enter tree at key while recording key
+                key = list(tree.keys())[0]
+                tree = tree.get(key)
+
+                # grab vote from example using recorded key
+                vote = example[key]
+                # if vote != "Yea":
+                #     vote = "Nay"
+
+                # navigate tree using recorded vote
+                tree = tree.get(vote)
+
+            self.test_actual.append(tree)
+            print(tree)
+
+    def model_results(self):
+        matched = 0
+        values = len(self.test_actual)
+        incorrect_lines = []
+
+        for i in range(len(self.test_actual)):
+            if self.train_expected[i] == self.test_actual[i]:
+                matched += 1
+            else:
+                incorrect_lines.append(i + 1)
+        print()
+        print("Correct/Total: ", str(matched) + "/" + str(values))
+        print("Incorrect Lines:", incorrect_lines)
+
+    def result_information(self):
+        print(Counter(self.test_actual))
 
 
 def main():
-    tree = DecisionTree()
-    tree.train_model('../data/congress_train.csv')
+    d_tree = DecisionTree()
+    d_tree.read_data('../data/congress_train.csv')
+    d_tree.build_tree_classifier(d_tree.data, d_tree.attributes, [])
+    d_tree.test_model('../data/congress_test.csv')
+    # d_tree.model_results()
+    d_tree.result_information()
 
 
 if __name__ == "__main__":
