@@ -18,10 +18,7 @@ class DecisionTree:
         # Begin reading training set
         with open(train_model_directory, 'r') as f:
             for line in f:
-                line = line.strip('\n').replace('Not Voting', 'Nay').replace('Present', 'Nay').split(',')
-                for string_index in range(len(line)):
-                    if line[string_index] == "":
-                        line[string_index] = "Nay"
+                line = line.strip('\n').split(',')
                 self.train_expected.append(line[len(line) - 1])
                 self.data.append(line)
 
