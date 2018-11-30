@@ -195,7 +195,7 @@ def main():
     # classifier.train_model(args[0])  # arg 0
     # classifier.test_model(args[1])  # arg 1
 
-    classifier.train_model('../data/my_train.csv')  # arg 0
+    classifier.train_model('../data/congress_train.csv')  # arg 0
     classifier.test_model('../data/my_test.csv')  # arg 1
 
     classifier.model_results()
