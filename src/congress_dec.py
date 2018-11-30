@@ -18,7 +18,10 @@ class DecisionTree:
         # Begin reading training set
         with open(train_model_directory, 'r') as f:
             for line in f:
-                line = line.strip('\n').split(',')
+                line = line.strip('\n').replace('Not Voting', 'Nay').replace('Present', 'Nay').split(',')
+                for string_index in range(len(line)):
+                    if line[string_index] == "":
+                        line[string_index] = "Nay"
                 self.train_expected.append(line[len(line) - 1])
                 self.data.append(line)
 
@@ -104,10 +107,12 @@ class DecisionTree:
         return max(enumerate(gain), key=operator.itemgetter(1))[0]
 
     def information_gain(self, p_i, n_i):
-        if p_i == n_i:
-            return 1
+        if p_i == n_i == 0:
+            return 0
         elif p_i == 0 or n_i == 0:
             return 0
+        elif p_i == n_i != 0:
+            return 1
         else:
             return ((-p_i) / (p_i + n_i)) * math.log((p_i / (p_i + n_i)), 2)\
                    - (n_i / (p_i + n_i)) * math.log((n_i / (p_i + n_i)), 2)
@@ -132,10 +137,6 @@ class DecisionTree:
             return random.choice(tie_breaker)
 
     def build_tree_classifier(self, examples, attributes, parent_examples):
-        # print("examples", examples)
-        # print("attributes", attributes)
-        # print("parent example", parent_examples)
-        # print()
 
         republicans = None
         democrats = None
@@ -184,7 +185,6 @@ class DecisionTree:
                 self.test.append(line)
 
         examples = self.test
-        tree = self.tree
 
         for example in examples:
             tree = self.tree
@@ -195,8 +195,8 @@ class DecisionTree:
 
                 # grab vote from example using recorded key
                 vote = example[key]
-                # if vote != "Yea":
-                #     vote = "Nay"
+                if vote != "Yea":
+                    vote = "Nay"
 
                 # navigate tree using recorded vote
                 tree = tree.get(vote)
@@ -226,9 +226,8 @@ def main():
     d_tree = DecisionTree()
     d_tree.read_data('../data/congress_train.csv')
     d_tree.build_tree_classifier(d_tree.data, d_tree.attributes, [])
-    d_tree.test_model('../data/congress_test.csv')
-    # d_tree.model_results()
-    d_tree.result_information()
+    d_tree.test_model('../data/my_test.csv')
+    d_tree.model_results()
 
 
 if __name__ == "__main__":

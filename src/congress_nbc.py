@@ -18,7 +18,6 @@ class NaiveBayes:
     output: the highest probability class as well as its probability
     """
 
-    # TODO: Make sure this is correct
     def naive_bayes_classifier(self, data):
         republican_prob = 1
         democratic_prob = 1
@@ -150,24 +149,12 @@ class NaiveBayes:
             # Republican
             self.republic[bill]['Yea'] = (self.bill_votes[bill]['Republican']["Yea"] + 1) / (number_of_republican_voters + 1)
             self.republic[bill]['Nay'] = (self.bill_votes[bill]['Republican']["Nay"] + 1) / (number_of_republican_voters + 1)
-            self.republic[bill]['Other'] = 1 / (number_of_republican_voters + 1)
+            self.republic[bill]['Other'] = (self.bill_votes[bill]['Republican']["Other"] + 1) / (number_of_republican_voters + 1)
             # Democratic
             self.democrat[bill]['Yea'] = (self.bill_votes[bill]['Democrat']["Yea"] + 1) / (number_of_democratic_voters + 1)
             self.democrat[bill]['Nay'] = (self.bill_votes[bill]['Democrat']["Nay"] + 1) / (number_of_democratic_voters + 1)
-            self.democrat[bill]['Other'] = 1 / (number_of_democratic_voters + 1)
+            self.democrat[bill]['Other'] = (self.bill_votes[bill]['Democrat']["Other"] + 1) / (number_of_democratic_voters + 1)
 
-        # Output all information gathered
-        # print("Republican Voters:", number_of_republican_voters)
-        # print("Democratic Voters:", number_of_democratic_voters)
-        # print()
-        # print(self.bill_votes)
-        # print()
-        # print("P(Republican):", self.republic_prob)
-        # print("P(Democratic):", self.democrat_prob)
-        # print()
-        # print("Republican:", self.republic)
-        # print("Democratic:", self.democrat)
-        # print()
 
     """
     reads each line from the test data and outputs classification
@@ -204,8 +191,6 @@ class NaiveBayes:
 
 def main():
     classifier = NaiveBayes()
-    # classifier.train_model('../data/congress_train.csv')  # arg 0
-    # classifier.test_model('../data/congress_test.csv')   # arg 1
 
     # classifier.train_model(args[0])  # arg 0
     # classifier.test_model(args[1])  # arg 1
